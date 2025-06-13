@@ -3,32 +3,32 @@ bits 16
 
 jmp 0x0000:stage2_main
 
-KERNEL_ADDRESS equ 0x1000
-NUMBER_OF_SECTORS equ 4
-
-install_gdt:
-    lgdt [toc]
-    ret
-
 gdt_data:
-    dq 0x0000000000000000                  ; Null descriptor
+    dq 0x0000000000000000       ; Null descriptor
 
-    ;; 32-bit code: base = 0, limit = 0xFFFFF, G=1, D/B=1, L=0
+    ;; 32-bit code segment
     dq 0x00CF9A000000FFFF
 
-    ;; 32-bit data: base = 0, limit = 0xFFFFF, G=1, D/B=1, L=0
+    ;; 32-bit data segment
     dq 0x00CF92000000FFFF
 
-    ;; 64-bit code: limit=0, base=0, L=1, D/B=0
-    dq 0x00209A0000000000
+    ;; 64-bit code segment
+    dq 0x00AF9A000000FFFF
 
-    ;; 64-bit data: limit=0xFFFFF, base=0, G=1, D/B=1, L=0
+    ;; 64-bit data segment
     dq 0x00CF92000000FFFF
 
 end_of_gdt:
 toc:
     dw end_of_gdt - gdt_data - 1
     dd gdt_data
+
+KERNEL_ADDRESS equ 0x9000
+NUMBER_OF_SECTORS equ 4
+
+install_gdt:
+    lgdt [toc]
+    ret
 
 enable_a20_output_port:
     cli
@@ -92,7 +92,7 @@ stage2_main:
 
     mov [drive_number], dl
 
-    mov bx, KERNEL_ADDRESS
+    mov bx, KERNEL_ADDRESS >> 4
     mov es, bx
     xor bx, bx
 
@@ -169,33 +169,42 @@ init_pm:
     mov esp, ebp
 
 .setup_paging:
+    mov eax, cr0
+    and eax, 01111111111111111111111111111111b
+    mov cr0, eax
+
     mov edi, 0x1000
+    mov cr3, edi
     xor eax, eax
     mov ecx, 4096
     rep stosd
+    mov edi, cr3
 
-    mov dword [0x1000], 0x2003
+    mov dword [edi], 0x2003
+    add edi, 0x1000
+    mov dword [edi], 0x3003
+    add edi, 0x1000
+    mov dword [edi], 0x4003
+    add edi, 0x1000
 
-    mov edi, 0x2000
-    xor eax, eax
-    mov ecx, 4096
-    rep stosd
+    mov ebx, 0x00000003
+    mov ecx, 512
 
-    mov dword [0x2000], 0x3003
-
-    mov edi, 0x3000
-    xor eax, eax
-    mov ecx, 4096
-    rep stosd
-
-    mov dword [0x3000], 0x00000083
-
-    mov eax, 0x1000
-    mov cr3, eax
+.set_entry:
+    mov dword [edi], ebx
+    add ebx, 0x1000
+    add edi, 8
+    loop .set_entry
 
     mov eax, cr4
     or eax, 1 << 5
     mov cr4, eax
+
+    mov eax, 0x7
+    xor ecx, ecx
+    cpuid
+    test ecx, (1<<16)
+    jnz .5_level_paging
 
     mov ecx, 0xC0000080
     rdmsr
@@ -207,6 +216,12 @@ init_pm:
     mov cr0, eax
 
     jmp 0x18:long_mode_entry
+
+.5_level_paging:
+    mov eax, cr4
+    or eax, (1<<12)
+    mov cr4, eax
+    ret
 
 bits 64
 
@@ -223,11 +238,13 @@ long_mode_entry:
     mov ecx, 500
     rep stosq
 
-    jmp [jmp_far_ptr]
+    hlt
+
+    jmp far [jmp_far_ptr]
 
 jmp_far_ptr:
     dw 0x18               ; segment selector (2 bytes)
-    dq 0x1000             ; offset (8 bytes)
+    dq 0x9000             ; offset (8 bytes)
 
 msg_loading db 'Loading...', 0x0D, 0x0A, 0
 msg_error1 db 'Disk failed', 0x0D, 0x0A, 0
