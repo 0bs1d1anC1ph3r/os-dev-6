@@ -22,13 +22,13 @@ stage1_main:
 
     jc .memory_error
 
-    mov bx, 0x7c00 + 512
+    mov bx, 0x7c00 + 1024
     mov dl, [drive_number]
 
     push dx
     mov ah, 0x02
 
-    mov al, 1
+    mov al, 2
     mov ch, 0
     mov dh, 0
     mov cl, 2
@@ -38,7 +38,7 @@ stage1_main:
     jc .disk_error
 
     pop dx
-    cmp al, 1
+    cmp al, 2
 
     jne .incomplete_read
 

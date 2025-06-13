@@ -15,8 +15,8 @@ KERNEL_OBJ  := $(BUILD_DIR)/kernel.o
 KERNEL_ELF  := $(BUILD_DIR)/kernel.elf
 KERNEL_BIN  := $(BUILD_DIR)/KERNEL.BIN
 
-CFLAGS      := -m32 -ffreestanding -O2 -Wall -Wextra
-LDFLAGS     := -m elf_i386 -T $(LINKER)
+CFLAGS      := -m64 -ffreestanding -O2 -Wall -Wextra
+LDFLAGS     := -m elf_x86_64 -T $(LINKER)
 
 all: $(KERNEL_BIN)
 
@@ -24,11 +24,11 @@ all: $(KERNEL_BIN)
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-# Assemble the entry stub as ELF32 object
+# Assemble the entry stub as ELF64 object
 $(ENTRY_OBJ): $(ENTRY_SRC) | $(BUILD_DIR)
-	$(ASM) -f elf32 $< -o $@
+	$(ASM) -f elf64 $< -o $@
 
-# Compile the C kernel into ELF32 object
+# Compile the C kernel into ELF64 object
 $(KERNEL_OBJ): $(KERNEL_C) | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 

@@ -1,36 +1,29 @@
-org 0x7e00
+org 0x8000
 bits 16
 
 jmp 0x0000:stage2_main
 
-KERNEL_ADDRESS equ 0x8000
+KERNEL_ADDRESS equ 0x1000
 NUMBER_OF_SECTORS equ 4
 
 install_gdt:
-    cli
-    pusha
     lgdt [toc]
-    popa
-    sti
     ret
 
 gdt_data:
-    dd 0                        ; null descriptor
-    dd 0
+    dq 0x0000000000000000                  ; Null descriptor
 
-    dw 0FFFFh                   ; limit low
-    dw 0                        ; base low
-    db 0                        ; base middle
-    db 10011010b                ; access
-    db 11001111b                ; granularity
-    db 0                        ; base high
+    ;; 32-bit code: base = 0, limit = 0xFFFFF, G=1, D/B=1, L=0
+    dq 0x00CF9A000000FFFF
 
-    dw 0FFFFh                   ; limit low (same as code)
-    dw 0                        ; base low
-    db 0                        ; base middle
-    db 10010010b                ; access
-    db 11001111b                ; granularity
-    db 0                        ; base high
+    ;; 32-bit data: base = 0, limit = 0xFFFFF, G=1, D/B=1, L=0
+    dq 0x00CF92000000FFFF
+
+    ;; 64-bit code: limit=0, base=0, L=1, D/B=0
+    dq 0x00209A0000000000
+
+    ;; 64-bit data: limit=0xFFFFF, base=0, G=1, D/B=1, L=0
+    dq 0x00CF92000000FFFF
 
 end_of_gdt:
 toc:
@@ -99,10 +92,10 @@ stage2_main:
 
     mov [drive_number], dl
 
-    mov si, msg_test
-    call puts
-
     mov bx, KERNEL_ADDRESS
+    mov es, bx
+    xor bx, bx
+
     mov dh, NUMBER_OF_SECTORS
     mov dl, [drive_number]
 
@@ -147,7 +140,12 @@ stage2_main:
     int 0x19
 
 .enter_protected_mode:
+    cli
+    pusha
     call install_gdt
+    popa
+    sti
+
     call enable_a20_output_port
 
     cli
@@ -163,17 +161,74 @@ bits 32
 init_pm:
     mov ax, 0x10
     mov ds, ax
-    mov ss, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
+    mov ss, ax
     mov ebp, 0x90000
     mov esp, ebp
 
-    jmp KERNEL_ADDRESS
-    jmp $
+.setup_paging:
+    mov edi, 0x1000
+    xor eax, eax
+    mov ecx, 4096
+    rep stosd
 
-msg_test db 'AAAAAAAAAAAAAAAA', 0x0D, 0x0A, 0
+    mov dword [0x1000], 0x2003
+
+    mov edi, 0x2000
+    xor eax, eax
+    mov ecx, 4096
+    rep stosd
+
+    mov dword [0x2000], 0x3003
+
+    mov edi, 0x3000
+    xor eax, eax
+    mov ecx, 4096
+    rep stosd
+
+    mov dword [0x3000], 0x00000083
+
+    mov eax, 0x1000
+    mov cr3, eax
+
+    mov eax, cr4
+    or eax, 1 << 5
+    mov cr4, eax
+
+    mov ecx, 0xC0000080
+    rdmsr
+    or eax, 1 << 8
+    wrmsr
+
+    mov eax, cr0
+    or eax, 1 << 31
+    mov cr0, eax
+
+    jmp 0x18:long_mode_entry
+
+bits 64
+
+long_mode_entry:
+    cli
+    mov ax, 0x20
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+    mov edi, 0xB8000
+    mov rax, 0x1F201F201F201F20
+    mov ecx, 500
+    rep stosq
+
+    jmp [jmp_far_ptr]
+
+jmp_far_ptr:
+    dw 0x18               ; segment selector (2 bytes)
+    dq 0x1000             ; offset (8 bytes)
+
 msg_loading db 'Loading...', 0x0D, 0x0A, 0
 msg_error1 db 'Disk failed', 0x0D, 0x0A, 0
 msg_error3 db 'Incomplete read', 0x0D, 0x0A, 0
