@@ -2,8 +2,13 @@ bits 64
 
 global _start
 
-enter_kernel:
-    jmp $
+_start:
+    mov rsp, 0x90000
+    mov rdi, 0xB8000
+    mov rax, 0x1F201F201F201F20
+    mov ecx, 500
+    rep stosq
+
     extern _kmain
     call _kmain
 

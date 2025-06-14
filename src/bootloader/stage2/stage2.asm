@@ -3,31 +3,32 @@ bits 16
 
 jmp 0x0000:stage2_main
 
-gdt_data:
-    dq 0x0000000000000000       ; Null descriptor
-
-    ;; 32-bit code segment
+gdt32:
+    dq 0
+.code32: equ $ - gdt32
     dq 0x00CF9A000000FFFF
-
-    ;; 32-bit data segment
+.data32: equ $ - gdt32
     dq 0x00CF92000000FFFF
+.pointer32:
+    dw .pointer32 - gdt32 - 1
+    dq gdt32
 
-    ;; 64-bit code segment
+gdt64:
+    dq 0
+.code64: equ $ - gdt64
     dq 0x00AF9A000000FFFF
+.data64: equ $ - gdt64
+    dq 0x00AF92000000FFFF
+.pointer64:
+    dw .pointer64 - gdt64 - 1
+    dq gdt64
 
-    ;; 64-bit data segment
-    dq 0x00CF92000000FFFF
 
-end_of_gdt:
-toc:
-    dw end_of_gdt - gdt_data - 1
-    dd gdt_data
-
-KERNEL_ADDRESS equ 0x9000
+KERNEL_BUFFER equ  0x00010000
 NUMBER_OF_SECTORS equ 4
 
 install_gdt:
-    lgdt [toc]
+    lgdt [gdt32.pointer32]
     ret
 
 enable_a20_output_port:
@@ -92,8 +93,8 @@ stage2_main:
 
     mov [drive_number], dl
 
-    mov bx, KERNEL_ADDRESS >> 4
-    mov es, bx
+    mov ax, 0x1000
+    mov es, ax
     xor bx, bx
 
     mov dh, NUMBER_OF_SECTORS
@@ -105,10 +106,9 @@ stage2_main:
     mov al, dh
     mov ch, 0
     mov dh, 0
-    mov cl, 3
+    mov cl, 4
 
     int 0x13
-
 
     jc .disk_error
 
@@ -141,9 +141,7 @@ stage2_main:
 
 .enter_protected_mode:
     cli
-    pusha
     call install_gdt
-    popa
     sti
 
     call enable_a20_output_port
@@ -155,6 +153,12 @@ stage2_main:
     mov cr0, eax
 
     jmp 08h:init_pm
+
+msg_loading db 'Loading...', 0x0D, 0x0A, 0
+msg_error1 db 'Disk failed', 0x0D, 0x0A, 0
+msg_error3 db 'Incomplete read', 0x0D, 0x0A, 0
+msg_error4: db 'Press any key to reboot...', 0x0D, 0x0A, 0
+
 
 bits 32
 
@@ -211,15 +215,17 @@ init_pm:
     or eax, 1 << 8
     wrmsr
 
+    lgdt [gdt64.pointer64]
+
     mov eax, cr0
-    or eax, 1 << 31
+    or eax, (1 << 31) | 1
     mov cr0, eax
 
-    jmp 0x18:long_mode_entry
+    jmp 0x08:long_mode_entry
 
 .5_level_paging:
     mov eax, cr4
-    or eax, (1<<12)
+    or eax, (1 << 12)
     mov cr4, eax
     ret
 
@@ -227,26 +233,14 @@ bits 64
 
 long_mode_entry:
     cli
-    mov ax, 0x20
+    mov ax, gdt64.data64
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
     mov ss, ax
-    mov edi, 0xB8000
-    mov rax, 0x1F201F201F201F20
-    mov ecx, 500
-    rep stosq
+    mov rdi, 0xB8000
 
-    hlt
+    mov rax, KERNEL_BUFFER
 
-    jmp far [jmp_far_ptr]
-
-jmp_far_ptr:
-    dw 0x18               ; segment selector (2 bytes)
-    dq 0x9000             ; offset (8 bytes)
-
-msg_loading db 'Loading...', 0x0D, 0x0A, 0
-msg_error1 db 'Disk failed', 0x0D, 0x0A, 0
-msg_error3 db 'Incomplete read', 0x0D, 0x0A, 0
-msg_error4: db 'Press any key to reboot...', 0x0D, 0x0A, 0
+    jmp rax
