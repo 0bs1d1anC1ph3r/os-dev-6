@@ -6,6 +6,7 @@ LD         ?= ld
 OBJCOPY    ?= objcopy
 
 BUILD_DIR   := $(abspath $(BUILD_DIR))
+LIB_DIR		:= ../standard_library
 ENTRY_SRC   := kernel_entry.asm
 KERNEL_C    := kernel.c
 LINKER      := linker.ld
@@ -15,8 +16,11 @@ KERNEL_OBJ  := $(BUILD_DIR)/kernel.o
 KERNEL_ELF  := $(BUILD_DIR)/kernel.elf
 KERNEL_BIN  := $(BUILD_DIR)/KERNEL.BIN
 
-CFLAGS      := -m64 -ffreestanding -O2 -Wall -Wextra
+CFLAGS      := -nostdlib -nostdinc -I $(LIB_DIR) -m64 -ffreestanding -O2 -Wall -Wextra
 LDFLAGS     := -m elf_x86_64 -T $(LINKER)
+
+LIB_SRC    := $(wildcard $(LIB_DIR)/*.c)
+LIB_OBJ    := $(patsubst $(LIB_DIR)/%.c,$(BUILD_DIR)/%.o,$(LIB_SRC))
 
 all: $(KERNEL_BIN)
 
@@ -34,7 +38,7 @@ $(KERNEL_OBJ): $(KERNEL_C) | $(BUILD_DIR)
 
 # Link entry and kernel objects into a flat ELF using linker script
 $(KERNEL_ELF): $(ENTRY_OBJ) $(KERNEL_OBJ) $(LINKER)
-	$(LD) $(LDFLAGS) $(ENTRY_OBJ) $(KERNEL_OBJ) $(STDIO_OBJ) -o $@
+	$(LD) $(LDFLAGS) $(ENTRY_OBJ) $(KERNEL_OBJ) -o $@
 
 # Convert ELF to raw binary
 $(KERNEL_BIN): $(KERNEL_ELF)

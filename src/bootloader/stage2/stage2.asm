@@ -191,12 +191,14 @@ init_pm:
     mov dword [edi], 0x4003
     add edi, 0x1000
 
-    mov ebx, 0x00000003
+    mov edi, 0x3000
+    mov eax, 0x00000083
+    xor ebx, ebx
     mov ecx, 512
 
 .set_entry:
-    mov dword [edi], ebx
-    add ebx, 0x1000
+    mov dword [edi], eax
+    add eax, 0x200000
     add edi, 8
     loop .set_entry
 

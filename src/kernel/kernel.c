@@ -1,5 +1,4 @@
-typedef unsigned short uint16_t;
-typedef unsigned int   uint32_t;
+#include <test_header_include_all.h>
 
 void _kmain(void)
 {
