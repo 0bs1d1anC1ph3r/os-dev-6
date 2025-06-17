@@ -31,3 +31,7 @@ typedef unsigned long uintptr_t;
 #ifndef _INTPTR_T_DEFINED
 typedef signed long intpntr_t;
 #endif
+
+#ifndef _SIZE_T_DEFINED
+typedef unsigned long int size_t;
+#endif
