@@ -11,7 +11,6 @@ idtr_t g_idtr;
 
 extern uint64_t isr_stub_table[];
 
-
 void idt_set_descriptor(uint8_t vector, uintptr_t isr, uint8_t flags, uint8_t ist) {
     idt_desc_t* descriptor = &g_idt[vector];
 

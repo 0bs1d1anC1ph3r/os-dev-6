@@ -25,7 +25,7 @@ gdt64:
 
 
 KERNEL_BUFFER equ  0x00010000
-NUMBER_OF_SECTORS equ 6
+NUMBER_OF_SECTORS equ 10
 
 install_gdt:
     lgdt [gdt32.pointer32]
