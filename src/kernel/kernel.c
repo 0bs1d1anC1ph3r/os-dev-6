@@ -1,13 +1,14 @@
 #include <test_header_include_all.h>
+#include "x86_64/kernel_include_test_header.h"
 
 void _kmain(void)
 {
     vga_clear_screen();
-    uint16_t *vga = (uint16_t*)0xB8000;
-    const char *msg = "KERNEL!!";
-    for (int i = 0; msg[i]; ++i)
-        vga[i] = (0x0F << 8) | msg[i];
 
+    const char *msg = "Hello World!";
+    for (int i = 0; msg[i] != '\0'; ++i) {
+        vga_putc(msg[i]);
+    }
 
     while (1)
         __asm__ volatile ("hlt");

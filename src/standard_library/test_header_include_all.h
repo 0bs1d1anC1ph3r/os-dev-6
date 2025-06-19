@@ -7,6 +7,3 @@
 #include <memory.h>
 #include <string.h>
 #include <ctype.h>
-#include <io.h>
-#include <vfs.h>
-#include <vga_text.h>

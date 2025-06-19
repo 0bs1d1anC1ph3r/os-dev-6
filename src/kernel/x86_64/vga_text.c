@@ -1,6 +1,6 @@
-#include <vga_text.h>
+#include "vga_text.h"
+#include "io.h"
 #include <stdint.h>
-#include <io.h>
 
 const unsigned SCREEN_WIDTH  = 80;
 const unsigned SCREEN_HEIGHT = 25;

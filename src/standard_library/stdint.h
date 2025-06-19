@@ -24,6 +24,14 @@ typedef int int32_t;
 typedef unsigned int uint32_t;
 #endif
 
+#ifndef _INT64_T_DEFINED_
+typedef int int64_t;
+#endif
+
+#ifndef _UINT64_T_DEFINED_
+typedef unsigned int uint64_t;
+#endif
+
 #ifndef _UINTPTR_T_DEFINED
 typedef unsigned long uintptr_t;
 #endif
