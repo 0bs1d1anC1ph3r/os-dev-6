@@ -43,7 +43,7 @@ void vga_clear_screen()
   {
     for (unsigned y = 0; y < SCREEN_HEIGHT; ++y) {
       for (unsigned x = 0; x < SCREEN_WIDTH; ++x) {
-        vga_put_char(x, y, '\0');
+        vga_put_char(x, y, ' ');
         vga_put_color(x, y, DEFAULT_COLOR);
       }
     }
@@ -53,44 +53,57 @@ void vga_clear_screen()
   }
 
 void vga_scroll_back(int lines)
-  {
-    for (unsigned y = lines; y < SCREEN_HEIGHT; ++y) {
-      for (unsigned x = 0; x < SCREEN_WIDTH; ++x) {
-        vga_put_char(x, y - lines, vga_get_char(x, y));
-        vga_put_color(x, y, DEFAULT_COLOR);
-      }
+{
+  if ((unsigned)lines > SCREEN_HEIGHT) return;
+
+  for (unsigned y = lines; y < SCREEN_HEIGHT; ++y) {
+    for (unsigned x = 0; x < SCREEN_WIDTH; ++x) {
+      vga_put_char(x, y - lines, vga_get_char(x, y));
+      vga_put_color(x, y - lines, vga_get_color(x, y));
     }
-    screen_y -= lines;
   }
+
+  for (unsigned y = SCREEN_HEIGHT - lines; y < SCREEN_HEIGHT; ++y) {
+    for (unsigned x = 0; x < SCREEN_WIDTH; ++x) {
+      vga_put_char(x, y, ' ');
+      vga_put_color(x, y, DEFAULT_COLOR);
+    }
+  }
+
+  screen_y -= lines;
+  if (screen_y < 0) screen_y = 0;
+}
 
 void vga_putc(char c)
-  {
-    switch (c) {
-    case '\n':
-        screen_x = 0;
-        screen_y++;
-        break;
-    case '\t':
-      for (int i = 0; i < 4 - (screen_x % 4); ++i) {
-        vga_putc(' ');
-      }
-      break;
-    case '\r':
-      screen_x = 0;
-      break;
-    default:
-      vga_put_char(screen_x, screen_y, c);
-      screen_x++;
-      break;
+{
+  switch (c) {
+  case '\n':
+    screen_x = 0;
+    screen_y++;
+    break;
+  case '\t':
+    for (int i = 0; i < 4 - (screen_x % 4); ++i) {
+      vga_putc(' ');
     }
-
-    if ((unsigned)screen_x >= SCREEN_WIDTH) {
-      screen_y++;
-      screen_x = 0;
-    }
-
-    if ((unsigned)screen_y >= SCREEN_HEIGHT) {
-      vga_scroll_back(1);
-    }
-    vga_set_cursor(screen_x, screen_y);
+    break;
+  case '\r':
+    screen_x = 0;
+    break;
+  default:
+    vga_put_char(screen_x, screen_y, c);
+    vga_put_color(screen_x, screen_y, DEFAULT_COLOR);
+    screen_x++;
+    break;
   }
+
+  if ((unsigned)screen_x >= SCREEN_WIDTH) {
+    screen_y++;
+    screen_x = 0;
+  }
+
+  if ((unsigned)screen_y >= SCREEN_HEIGHT) {
+    vga_scroll_back(1);
+  }
+
+  vga_set_cursor(screen_x, screen_y);
+}

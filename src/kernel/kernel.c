@@ -11,7 +11,19 @@ void _kmain(void)
     }
 
     idt_init();
+    i686_outb(0x20, 0x11);
+    i686_outb(0xA0, 0x11);
+    i686_outb(0x21, 0x20);
+    i686_outb(0xA1, 0x28);
+    i686_outb(0x21, 0x04);
+    i686_outb(0xA1, 0x02);
+    i686_outb(0x21, 0x01);
+    i686_outb(0xA1, 0x01);
+    i686_outb(0x21, 0x00);
+    i686_outb(0xA1, 0x00);
+
+    __asm__ volatile ("sti");
 
     for (;;)
-        __asm__ volatile ("hlt");
+        __asm__ volatile ("cli; hlt");
 }
