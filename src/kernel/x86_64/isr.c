@@ -1,3 +1,6 @@
+#include "vga_text.h"
+#include "isr.h"
+#include <stdint.h>
 
 static const char *exception_labels[] = {
     "[0x00] Divide by Zero Exception",
@@ -33,3 +36,54 @@ static const char *exception_labels[] = {
     "[0x1E] Security Exception",
     "[0x1F] Inexplicable Error"
 };
+
+extern const char *exception_labels[];
+
+void isr_exception_handler(exception_frame_t *frame)
+{
+    uint64_t error_code = frame->error_code;
+    uint64_t vector     = frame->vector;
+
+    const char *exception_label = exception_labels[vector];
+    vga_clear_screen();
+
+    for (int i = 0; exception_label[i] != '\0'; ++i)
+        vga_putc(exception_label[i]);
+    vga_putc('\n');
+
+    if (vector == 14) {
+        const char *page_fault = "Page fault at address: 0x";
+
+        for (int i = 0; page_fault[i] != '\0'; ++i)
+          vga_putc(page_fault[i]);
+        uint64_t cr2;
+        __asm__ volatile(
+                         "mov %%cr2, %%rax\n"
+                         "mov %%rax, %0\n"
+                         : "=m"(cr2)
+                         :
+                         : "rax"
+                         );
+
+        for (int shift = 60; shift >= 0; shift -= 4) {
+            uint8_t digit = (cr2 >> shift) & 0xF;
+            vga_putc(digit < 10 ? '0' + digit : 'A' + digit - 10);
+        }
+        vga_putc('\n');
+    }
+
+    const char *error_code_print = "Error code: 0x";
+
+    for (int i = 0; error_code_print[i] != '\0'; ++i)
+      vga_putc(error_code_print[i]);
+
+    for (int shift = 60; shift >= 0; shift -= 4) {
+        uint8_t digit = (error_code >> shift) & 0xF;
+        vga_putc(digit < 10 ? '0' + digit : 'A' + digit - 10);
+    }
+    vga_putc('\n');
+
+    for (;;) {
+        __asm__ volatile ("cli; hlt");
+    }
+}

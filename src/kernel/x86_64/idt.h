@@ -34,3 +34,4 @@ typedef struct {
 } __attribute__((packed)) idtr_t;
 
 void idt_reload(idtr_t *idtr);
+void idt_init(void);

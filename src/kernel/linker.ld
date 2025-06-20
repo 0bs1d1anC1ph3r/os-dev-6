@@ -4,16 +4,16 @@ SECTIONS
 {
   . = 0x10000;
 
-  .text : {
+  .text : ALIGN(0x1000) {
     *(.text.entry)
     *(.text*)
   }
 
-  .data : {
+  .data : ALIGN(0x1000) {
     *(.data*)
   }
 
-  .bss : {
+  .bss : ALIGN(0x1000) {
     *(.bss*)
     *(COMMON)
   }
