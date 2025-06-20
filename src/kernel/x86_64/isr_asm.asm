@@ -36,32 +36,21 @@
 
 %macro isr_err_stub 1
 isr_stub_%1:
-    push_all
-    push qword [rsp + 120]
-    push %1
-    sub rsp, 8
-    mov rdi, rsp
+    push rax
+    mov rdi, %1
     call isr_exception_handler
-    add rsp, 8
-    add rsp, 16
-    pop_all
+    pop rax
     iretq
 %endmacro
 
 %macro isr_no_err_stub 1
 isr_stub_%1:
-    push_all
-    push 0
-    push %1
-    sub rsp, 8
-    mov rdi, rsp
+    push rax
+    mov rdi, %1
     call isr_exception_handler
-    add rsp, 8
-    add rsp, 16
-    pop_all
+    pop rax
     iretq
 %endmacro
-
 
 extern isr_exception_handler
 

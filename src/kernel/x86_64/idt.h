@@ -33,5 +33,5 @@ typedef struct {
   uint64_t base;
 } __attribute__((packed)) idtr_t;
 
-void idt_reload(idtr_t *idtr);
+void idt_reload(volatile idtr_t *idtr);
 void idt_init(void);

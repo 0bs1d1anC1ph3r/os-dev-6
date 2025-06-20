@@ -3,6 +3,13 @@
 
 const char *msg_test = " Test!";
 
+void test_divide_by_zero(void)
+{
+    volatile int a = 1;
+    volatile int b = 0;
+    volatile int c = a / b;
+}
+
 void _kmain(void)
 {
     vga_clear_screen();
@@ -14,8 +21,7 @@ void _kmain(void)
 
     idt_init();
 
-    volatile uint64_t *ptr = (uint64_t *)0xFFFFFFFFFFFFF000;
-    uint64_t val = *ptr;
+    test_divide_by_zero();
 
     const char *msg_2 = " Works!";
     for (int i = 0; msg_2[i] != '\0'; ++i) {

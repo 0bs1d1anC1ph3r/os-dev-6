@@ -39,51 +39,25 @@ static const char *exception_labels[] = {
 
 extern const char *exception_labels[];
 
-void isr_exception_handler(exception_frame_t *frame)
+__attribute__((noreturn))
+void isr_exception_handler(uint64_t vector)
 {
-    uint64_t error_code = frame->error_code;
-    uint64_t vector     = frame->vector;
+  vga_clear_screen();
 
-    const char *exception_label = exception_labels[vector];
-    vga_clear_screen();
-
-    for (int i = 0; exception_label[i] != '\0'; ++i)
-        vga_putc(exception_label[i]);
+  if (vector < sizeof(exception_labels)/sizeof(*exception_labels)) {
+    const char *label = exception_labels[vector];
+    for (int i = 0; label[i]; ++i)
+      vga_putc(label[i]);
     vga_putc('\n');
-
-    if (vector == 14) {
-        const char *page_fault = "Page fault at address: 0x";
-
-        for (int i = 0; page_fault[i] != '\0'; ++i)
-          vga_putc(page_fault[i]);
-        uint64_t cr2;
-        __asm__ volatile(
-                         "mov %%cr2, %%rax\n"
-                         "mov %%rax, %0\n"
-                         : "=m"(cr2)
-                         :
-                         : "rax"
-                         );
-
-        for (int shift = 60; shift >= 0; shift -= 4) {
-            uint8_t digit = (cr2 >> shift) & 0xF;
-            vga_putc(digit < 10 ? '0' + digit : 'A' + digit - 10);
-        }
-        vga_putc('\n');
-    }
-
-    const char *error_code_print = "Error code: 0x";
-
-    for (int i = 0; error_code_print[i] != '\0'; ++i)
-      vga_putc(error_code_print[i]);
-
-    for (int shift = 60; shift >= 0; shift -= 4) {
-        uint8_t digit = (error_code >> shift) & 0xF;
-        vga_putc(digit < 10 ? '0' + digit : 'A' + digit - 10);
+  } else {
+    const char *vector_error = "Unknown vector";
+    for (int i = 0; vector_error[i] != '\0'; ++i) {
+      vga_putc(vector_error[i]);
     }
     vga_putc('\n');
+  }
 
-    for (;;) {
-        __asm__ volatile ("cli; hlt");
-    }
+  for (;;) {
+    __asm__ volatile ("cli; hlt");
+  }
 }
