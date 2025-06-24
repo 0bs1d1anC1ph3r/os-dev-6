@@ -107,3 +107,26 @@ void vga_putc(char c)
 
   vga_set_cursor(screen_x, screen_y);
 }
+
+void vga_puthex(uint64_t value)
+{
+  const char *hex_digits = "0123456789ABCDEF";
+  int started = 0;
+
+  vga_putc('0');
+  vga_putc('x');
+
+  for (int i = 60; i >= 0; i -= 4) {
+    uint8_t nibble = (value >> i) & 0xF;
+    if (nibble || started || i == 0) {
+      vga_putc(hex_digits[nibble]);
+      started = 1;
+    }
+  }
+}
+
+void vga_puts(const char *string)
+  {
+    for (int i = 0; string[i] != '\0'; ++i)
+      vga_putc(string[i]);
+  }

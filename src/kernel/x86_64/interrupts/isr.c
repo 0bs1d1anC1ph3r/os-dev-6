@@ -1,4 +1,4 @@
-#include "vga_text.h"
+#include "../vga_text.h"
 #include "isr.h"
 #include <stdint.h>
 
@@ -39,23 +39,6 @@ static const char *exception_labels[] = {
 
 extern const char *exception_labels[];
 
-void vga_puthex(uint64_t value)
-{
-  const char *hex_digits = "0123456789ABCDEF";
-  int started = 0;
-
-  vga_putc('0');
-  vga_putc('x');
-
-  for (int i = 60; i >= 0; i -= 4) {
-    uint8_t nibble = (value >> i) & 0xF;
-    if (nibble || started || i == 0) {
-      vga_putc(hex_digits[nibble]);
-      started = 1;
-    }
-  }
-}
-
 __attribute__((noreturn))
 void isr_exception_handler(uint64_t vector, uint64_t error_code)
 {
@@ -65,30 +48,22 @@ void isr_exception_handler(uint64_t vector, uint64_t error_code)
   const char *vector_msg = "Vector: ";
   const char *error_code_msg = "Error Code: ";
 
-  for (int i = 0; vector_msg[i] != '\0'; ++i) {
-    vga_putc(vector_msg[i]);
-  }
-
+  vga_puts(vector_msg);
   vga_puthex(vector);
   vga_putc('\n');
 
-  for (int i = 0; error_code_msg[i] != '\0'; ++i) {
-    vga_putc(error_code_msg[i]);
-  }
-
+  vga_puts(error_code_msg);
   vga_puthex(error_code);
   vga_putc('\n');
 
   if (vector < sizeof(exception_labels)/sizeof(*exception_labels)) {
     const char *label = exception_labels[vector];
-    for (int i = 0; label[i] != '\0'; ++i)
-      vga_putc(label[i]);
+    vga_puts(label);
     vga_putc('\n');
   } else {
     const char *vector_error = "Unknown vector";
-    for (int i = 0; vector_error[i] != '\0'; ++i) {
-      vga_putc(vector_error[i]);
-    }
+    vga_putc('\n');
+    vga_puts(vector_error);
     vga_putc('\n');
   }
 

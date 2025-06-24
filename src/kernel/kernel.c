@@ -5,25 +5,18 @@ void _kmain(void)
 {
     vga_clear_screen();
 
-    const char *msg = "Hello World!";
-    for (int i = 0; msg[i] != '\0'; ++i) {
-        vga_putc(msg[i]);
-    }
+    vga_puts("Hello World!");
+    vga_putc('\n');
 
-    idt_init();
-    i686_outb(0x20, 0x11);
-    i686_outb(0xA0, 0x11);
-    i686_outb(0x21, 0x20);
-    i686_outb(0xA1, 0x28);
-    i686_outb(0x21, 0x04);
-    i686_outb(0xA1, 0x02);
-    i686_outb(0x21, 0x01);
-    i686_outb(0xA1, 0x01);
-    i686_outb(0x21, 0x00);
-    i686_outb(0xA1, 0x00);
+    pic_remap();
+    idtr_t* g_idtr = idt_init();
+    idt_reload(g_idtr);
+    irq_init();
 
     __asm__ volatile ("sti");
 
+    vga_puts("Interrupts enabled\n");
+
     for (;;)
-        __asm__ volatile ("cli; hlt");
+        __asm__ volatile ("hlt");
 }
