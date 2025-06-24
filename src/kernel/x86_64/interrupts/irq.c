@@ -30,16 +30,20 @@ void pit_init(uint32_t hz)
   i686_outb(PIT_CHANNEL0, (divisor >> 8) & 0xFF);
 }
 
-void set_kboard_scancode(uint8_t scancode_set)
-  {
-    i686_outb(PS2_SCANSET, scancode_set);
-    i686_io_wait();
-    i686_outb(PS2_DATA_PORT, PS2_SCANSET);
-    i686_io_wait();
-    i686_outb(PS2_DATA_PORT, 0x00);
-    i686_io_wait();
-    i686_inb(PS2_DATA_PORT);
-  }
+void set_kboard_scancode(uint8_t set)
+{
+  i686_outb(0x60, 0xF0);
+  i686_io_wait();
+
+  while (i686_inb(0x60) != 0xFA)
+    ;
+
+  i686_outb(0x60, set);
+  i686_io_wait();
+
+  while (i686_inb(0x60) != 0xFA)
+    ;
+}
 
 void keyboard_handler(void)
   {
@@ -64,14 +68,6 @@ void irq_init(void)
 
 void irq_handler(uint64_t irq)
 {
-  if (irq == 39 && !(i686_inb(0xA0) & 0x80)) {
-    return;
-  }
-
-  if (irq == 31 && !(i686_inb(0x20) & 0x80)) {
-    return;
-  }
-
   switch(irq) {
     case 32:
       timer_handle();

@@ -13,6 +13,8 @@ void _kmain(void)
     idt_reload(g_idtr);
     irq_init();
 
+    pit_init(100);
+
     __asm__ volatile ("sti");
 
     vga_puts("Interrupts enabled\n");
