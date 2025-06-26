@@ -7,4 +7,5 @@ void irq_handler(uint64_t irq);
 void pit_init(uint32_t hz);
 void keyboard_handler(void);
 void enable_keyboard_scan(void);
-void set_kboard_scancode(uint8_t scancode_set);
+void set_kboard_scancode(void);
+void ps2_setup(void);

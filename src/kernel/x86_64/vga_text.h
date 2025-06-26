@@ -9,5 +9,6 @@ void     vga_set_cursor  (int x, int y);
 void     vga_clear_screen(void);
 void     vga_scroll_back (int lines);
 void     vga_putc        (char c);
-void     vga_puthex      (uint64_t value);
+void     vga_puthex_8    (uint8_t value);
+void     vga_puthex_64   (uint64_t value);
 void     vga_puts        (const char *string);

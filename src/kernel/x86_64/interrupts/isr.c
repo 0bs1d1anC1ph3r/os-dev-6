@@ -49,11 +49,11 @@ void isr_exception_handler(uint64_t vector, uint64_t error_code)
   const char *error_code_msg = "Error Code: ";
 
   vga_puts(vector_msg);
-  vga_puthex(vector);
+  vga_puthex_8(vector);
   vga_putc('\n');
 
   vga_puts(error_code_msg);
-  vga_puthex(error_code);
+  vga_puthex_64(error_code);
   vga_putc('\n');
 
   if (vector < sizeof(exception_labels)/sizeof(*exception_labels)) {

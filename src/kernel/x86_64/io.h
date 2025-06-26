@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 
+__attribute__((always_inline))
 static inline void i686_outb(uint16_t port, uint8_t value)
 {
   __asm__ volatile (
@@ -12,6 +13,7 @@ static inline void i686_outb(uint16_t port, uint8_t value)
                     );
 }
 
+__attribute__((always_inline))
 static inline uint8_t i686_inb(uint16_t port)
 {
   uint8_t value;
@@ -23,6 +25,7 @@ static inline uint8_t i686_inb(uint16_t port)
   return value;
 }
 
+__attribute__((always_inline))
 static inline void i686_io_wait(void)
 {
   __asm__ volatile (

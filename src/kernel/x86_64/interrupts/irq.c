@@ -3,9 +3,7 @@
 #include "../vga_text.h"
 #include "../io.h"
 #include <stdbool.h>
-
-static bool vectors[IDT_MAX_DESCRIPTORS];
-extern uint64_t irq_stub_table[];
+#include <stdint.h>
 
 static volatile uint64_t ticks = 0;
 
@@ -21,6 +19,13 @@ static const char* irq_names[] =
     "RTC", "ACPI", "Unused", "Unused", "Mouse", "FPU", "Primary ATA", "Secondary ATA"
 };
 
+void ps2_flush_output_buffer(uint16_t timeout)
+{
+  while (i686_inb(0x64) & 1 && timeout > 0) {
+    timeout--;
+    i686_inb(0x60);
+  }
+}
 
 void pit_init(uint32_t hz)
 {
@@ -30,28 +35,72 @@ void pit_init(uint32_t hz)
   i686_outb(PIT_CHANNEL0, (divisor >> 8) & 0xFF);
 }
 
-void set_kboard_scancode(uint8_t set)
+static int ps2_wait_input(void)
 {
-  i686_outb(0x60, 0xF0);
-  i686_io_wait();
-
-  while (i686_inb(0x60) != 0xFA)
-    ;
-
-  i686_outb(0x60, set);
-  i686_io_wait();
-
-  while (i686_inb(0x60) != 0xFA)
-    ;
+  uint64_t timeout = 100000UL;
+  while (--timeout) {
+    if (!(i686_inb(0x64) & (1 << 1))) return 0;
+  }
+  return 1;
 }
+
+static int ps2_wait_output(void)
+{
+  uint64_t timeout = 100000UL;
+  while (--timeout) {
+    if (i686_inb(0x64) & (1 << 0)) return 0;
+  }
+  return 1;
+}
+
+void set_kboard_scancode(void)
+{
+  ps2_wait_input();
+  i686_outb(0x60, 0xF0);
+  ps2_wait_output();
+  i686_outb(0x60, 2);
+  ps2_wait_output();
+
+  if (i686_inb(0x60) != 0xFA) {
+    vga_puts("Failed to set scancode set\n");
+  }
+}
+
+void ps2_setup(void)
+  {
+    i686_outb(0x64, 0xAD);
+    i686_outb(0x64, 0xA7);
+
+    ps2_flush_output_buffer(1024);
+
+    uint8_t status;
+
+    ps2_wait_input();
+    i686_outb(0x64, 0x20);
+    ps2_wait_output();
+
+    status = i686_inb(0x60);
+
+    status |= (0x01 | 0x02 | 0x40);
+
+    ps2_wait_input();
+    i686_outb(0x64, 0x60);
+    ps2_wait_input();
+    i686_outb(0x60, status);
+
+    i686_outb(0x64, 0xAE);
+    i686_outb(0x64, 0xA8);
+
+    set_kboard_scancode();
+  }
 
 void keyboard_handler(void)
   {
     uint8_t scancode = i686_inb(0x60);
-    vga_puthex(scancode);
+    vga_puthex_8(scancode);
   }
 
-void timer_handle(void)
+void timer_handler(void)
   {
     ++ticks;
   }
@@ -61,7 +110,6 @@ void irq_init(void)
     for (uint8_t irq = 0; irq < 16; ++irq) {
       uint8_t vector = 32 + irq;
       idt_set_descriptor(vector, irq_stub_table[irq], IDT_DESCRIPTOR_EXTERNAL, 0);
-      idt_enable_gate(vector);
       vectors[vector] = true;
     }
   }
@@ -69,23 +117,24 @@ void irq_init(void)
 void irq_handler(uint64_t irq)
 {
   switch(irq) {
-    case 32:
-      timer_handle();
+    case 0:
+      timer_handler();
       break;
-    case 33:
+    case 1:
       keyboard_handler();
-      break;
-    default:
+    break;
+  default:
       vga_puts("IRQ: ");
-      vga_puthex(irq);
-      if (irq >= 32 && irq < 48) {
+      vga_puthex_64(irq);
+      if (irq < 16) {
         vga_puts(" (");
-        vga_puts(irq_names[irq - 32]);
+        vga_puts(irq_names[irq]);
         vga_puts(")");
       }
       vga_putc('\n');
+      break;
   }
 
-  if (irq >= 40) i686_outb(0xA0, 0x20);
+  if (irq >= 8) i686_outb(0xA0, 0x20);
   i686_outb(0x20, 0x20);
 }

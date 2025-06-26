@@ -11,6 +11,6 @@
 #define ICW1_ICW4    0x01
 #define ICW4_8086    0x01
 
-void pic_remap(void);
+void pic_remap(int offset1, int offset2);
 void pic_mask_irq(uint8_t irq);
 void pic_unmask_irq(uint8_t irq);
