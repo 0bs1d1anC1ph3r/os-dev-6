@@ -19,7 +19,7 @@ KERNEL_ELF   := $(BUILD_DIR)/kernel.elf
 KERNEL_BIN   := $(BUILD_DIR)/KERNEL.BIN
 
 # Compiler and linker flags
-CFLAGS       := -nostdlib -nostdinc -I $(LIB_DIR) -m64 -ffreestanding -O2 -Wall -Wextra -g -O0
+CFLAGS       := -nostdlib -nostdinc -I $(LIB_DIR) -m64 -ffreestanding -O2 -Wall -Wextra -g -O0 -mno-sse -mno-mmx
 LDFLAGS      := -m elf_x86_64 -T $(LINKER) -g -O0
 
 # Standard library sources and objects
