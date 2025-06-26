@@ -36,11 +36,13 @@ typedef struct {
 
 void idt_enable_gate(int interrupt);
 void idt_disable_gate(int interrupt);
-void idt_reload(volatile idtr_t *idtr);
+void idt_reload(idtr_t *idtr);
 void idt_set_descriptor(uint8_t vector, uintptr_t isr, uint8_t flags, uint8_t ist);
-idtr_t* idt_init(void);
+void idt_init(void);
 void idt_assemble(uint16_t idt_count);
 
 extern bool vectors[IDT_MAX_DESCRIPTORS];
 extern uint64_t isr_stub_table[] __attribute__((aligned(8)));
 extern uint64_t irq_stub_table[] __attribute__((aligned(8)));
+extern idt_desc_t g_idt[IDT_MAX_DESCRIPTORS];
+extern idtr_t g_idtr;

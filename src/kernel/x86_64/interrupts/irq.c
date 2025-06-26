@@ -116,7 +116,7 @@ void irq_init(void)
   {
     for (uint8_t irq = 0; irq < 16; ++irq) {
       uint8_t vector = 32 + irq;
-      idt_set_descriptor(vector, irq_stub_table[irq], IDT_DESCRIPTOR_EXTERNAL, 0);
+      idt_set_descriptor(vector, irq_stub_table[irq], 0x8E, 0);
       vectors[vector] = true;
     }
   }

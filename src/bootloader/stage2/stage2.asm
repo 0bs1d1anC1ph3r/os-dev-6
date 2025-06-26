@@ -3,32 +3,30 @@ bits 16
 
 jmp 0x0000:stage2_main
 
-gdt32:
+
+gdt32_start:
     dq 0
-.code32: equ $ - gdt32
     dq 0x00CF9A000000FFFF
-.data32: equ $ - gdt32
     dq 0x00CF92000000FFFF
-.pointer32:
-    dw .pointer32 - gdt32 - 1
-    dq gdt32
+gdt32_end:
+gdt32_pointer:
+    dw gdt32_end - gdt32_start - 1
+    dd gdt32_start
 
-gdt64:
+gdt64_start:
     dq 0
-.code64: equ $ - gdt64
     dq 0x00AF9A000000FFFF
-.data64: equ $ - gdt64
     dq 0x00AF92000000FFFF
-.pointer64:
-    dw .pointer64 - gdt64 - 1
-    dq gdt64
-
+gdt64_end:
+gdt64_pointer:
+    dw gdt64_end - gdt64_start - 1
+    dq gdt64_start
 
 KERNEL_BUFFER equ  0x00010000
 NUMBER_OF_SECTORS equ 40
 
 install_gdt:
-    lgdt [gdt32.pointer32]
+    lgdt [gdt32_pointer]
     ret
 
 enable_a20_output_port:
@@ -217,7 +215,7 @@ init_pm:
     or eax, 1 << 8
     wrmsr
 
-    lgdt [gdt64.pointer64]
+    lgdt [gdt64_pointer]
 
     mov eax, cr0
     or eax, (1 << 31) | 1
@@ -235,7 +233,7 @@ bits 64
 
 long_mode_entry:
     cli
-    mov ax, gdt64.data64
+    mov ax, 0x10
     mov ds, ax
     mov es, ax
     mov fs, ax

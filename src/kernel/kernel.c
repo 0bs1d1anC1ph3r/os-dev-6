@@ -8,17 +8,17 @@ void _kmain(void)
     pic_mask_irq(0xFF);
     pic_remap(0x20, 0x28);
 
-    idtr_t* g_idtr = idt_init();
+    idt_init();
     irq_init();
 
     pit_init(100);
-    idt_reload(g_idtr);
+    idt_reload(&g_idtr);
 
-    pic_unmask_irq(1);
+    pic_unmask_irq(0xFC);
 
     __asm__ volatile ("sti");
 
-    vga_puts("Interrupts enabled\n");
+    vga_puts("\nInterrupts enabled");
 
     for (;;)
         __asm__ volatile ("hlt");
