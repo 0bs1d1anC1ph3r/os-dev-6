@@ -37,7 +37,7 @@ void pit_init(uint32_t hz)
 
 static int ps2_wait_input(void)
 {
-  uint64_t timeout = 100000UL;
+  uint64_t timeout = 1000;
   while (--timeout) {
     if (!(i686_inb(0x64) & (1 << 1))) return 0;
   }
@@ -46,7 +46,7 @@ static int ps2_wait_input(void)
 
 static int ps2_wait_output(void)
 {
-  uint64_t timeout = 100000UL;
+  uint64_t timeout = 1000;
   while (--timeout) {
     if (i686_inb(0x64) & (1 << 0)) return 0;
   }
@@ -58,13 +58,19 @@ void set_kboard_scancode(void)
   ps2_wait_input();
   i686_outb(0x60, 0xF0);
   ps2_wait_output();
-  i686_outb(0x60, 2);
-  ps2_wait_output();
-
   if (i686_inb(0x60) != 0xFA) {
-    vga_puts("Failed to set scancode set\n");
+    vga_puts("Failed to send 0xF0\n");
+    return;
+  }
+
+  ps2_wait_input();
+  i686_outb(0x60, 0x02);
+  ps2_wait_output();
+  if (i686_inb(0x60) != 0xFA) {
+    vga_puts("Failed to send scancode set\n");
   }
 }
+
 
 void ps2_setup(void)
   {
@@ -81,7 +87,8 @@ void ps2_setup(void)
 
     status = i686_inb(0x60);
 
-    status |= (0x01 | 0x02 | 0x40);
+    status &= ~0x30;
+    status |= 0x01;
 
     ps2_wait_input();
     i686_outb(0x64, 0x60);

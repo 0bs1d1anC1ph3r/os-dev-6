@@ -111,18 +111,11 @@ void vga_putc(char c)
 void vga_puthex_8(uint8_t value)
 {
   const char *hex_digits = "0123456789ABCDEF";
-  int started = 0;
 
   vga_putc('0');
   vga_putc('x');
-
-  for (int i = 4; i >= 0; i -= 4) {
-    uint8_t nibble = (value >> i) & 0xF;
-    if (nibble || started || i == 0) {
-      vga_putc(hex_digits[nibble]);
-      started = 1;
-    }
-  }
+  vga_putc(hex_digits[(value >> 4) & 0xF]);
+  vga_putc(hex_digits[value & 0xF]);
 }
 
 void vga_puthex_64(uint64_t value)

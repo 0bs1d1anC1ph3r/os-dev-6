@@ -5,9 +5,6 @@ void _kmain(void)
 {
     vga_clear_screen();
 
-    vga_puts("Hello World!");
-    vga_putc('\n');
-
     pic_mask_irq(0xFF);
     pic_remap(0x20, 0x28);
 
